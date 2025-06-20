@@ -1,0 +1,5 @@
+*.tar
+*.zip
+*.bak
+*.swp
+wazuh-install-files/

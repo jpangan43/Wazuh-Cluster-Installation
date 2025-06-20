@@ -1,0 +1,14 @@
+nodes:
+  indexer:
+    - name: node-1
+      ip: "<indexer-node-ip>"
+    #- name: node-2
+    #  ip: "<indexer-node-ip>"
+
+  server:
+    - name: wazuh-1
+      ip: "<wazuh-manager-ip>"
+
+  dashboard:
+    - name: dashboard
+      ip: "<dashboard-node-ip>"
