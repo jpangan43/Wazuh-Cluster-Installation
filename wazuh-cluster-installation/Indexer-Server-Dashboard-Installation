@@ -1,0 +1,164 @@
+# Wazuh Indexer Cluster Installation
+
+The installation process is divided into three stages:
+1. Initial configuration
+2. Wazuh indexer nodes installation
+3. Cluster initialization
+
+> **Note:** You need root user privileges to run all the commands described below.
+
+---
+
+## 1. Initial Configuration
+
+Indicate your deployment configuration, create the SSL certificates to encrypt communications between the Wazuh components, and generate random passwords to secure your installation.
+
+### Download the Wazuh installation assistant and configuration file
+
+```bash
+curl -sO https://packages.wazuh.com/4.12/wazuh-install.sh
+curl -sO https://packages.wazuh.com/4.12/config.yml
+```
+
+### Example `config.yml`
+
+```yaml
+nodes:
+  # Wazuh indexer nodes
+  indexer:
+    - name: node-1
+      ip: "<indexer-node-ip>"
+    #- name: node-2
+    #  ip: "<indexer-node-ip>"
+    #- name: node-3
+    #  ip: "<indexer-node-ip>"
+
+  # Wazuh server nodes
+  server:
+    - name: wazuh-1
+      ip: "<wazuh-manager-ip>"
+
+  # Wazuh dashboard nodes
+  dashboard:
+    - name: dashboard
+      ip: "<dashboard-node-ip>"
+```
+
+### Generate configuration files
+
+```bash
+bash wazuh-install.sh --generate-config-files
+```
+
+Copy the `wazuh-install-files.tar` file to all deployment servers using `scp`.
+
+---
+
+## 2. Wazuh Indexer Nodes Installation
+
+On each indexer node:
+
+```bash
+curl -sO https://packages.wazuh.com/4.12/wazuh-install.sh
+bash wazuh-install.sh --wazuh-indexer node-1
+```
+
+Repeat this step for all indexer nodes.
+
+---
+
+## 3. Cluster Initialization
+
+Run on **one** indexer node only:
+
+```bash
+bash wazuh-install.sh --start-cluster
+```
+
+---
+
+## ✅ Testing the Cluster Installation
+
+### Get the admin password:
+
+```bash
+tar -axf wazuh-install-files.tar wazuh-install-files/wazuh-passwords.txt -O | grep -P "'admin'" -A 1
+```
+
+### Test connection:
+
+```bash
+curl -k -u admin:<ADMIN_PASSWORD> https://<WAZUH_INDEXER_IP>:9200
+```
+
+Expected output:
+```json
+{
+  "name" : "node-1",
+  "cluster_name" : "wazuh-cluster",
+  ...
+}
+```
+
+### Check cluster nodes:
+
+```bash
+curl -k -u admin:<ADMIN_PASSWORD> https://<WAZUH_INDEXER_IP>:9200/_cat/nodes?v
+```
+
+---
+
+## 🖥️ Wazuh Server Cluster Installation
+
+```bash
+curl -sO https://packages.wazuh.com/4.12/wazuh-install.sh
+bash wazuh-install.sh --wazuh-server wazuh-1
+```
+
+Repeat on all Wazuh server nodes for a multi-node cluster.
+
+---
+
+## 📊 Wazuh Dashboard Installation
+
+```bash
+curl -sO https://packages.wazuh.com/4.12/wazuh-install.sh
+bash wazuh-install.sh --wazuh-dashboard dashboard
+```
+
+Optional custom port:
+
+```bash
+bash wazuh-install.sh --wazuh-dashboard dashboard --port 8443
+```
+
+After installation, access:
+
+- URL: `https://<WAZUH_DASHBOARD_IP_ADDRESS>`
+- User: `admin`
+- Password: `<ADMIN_PASSWORD>`
+
+Print all passwords:
+
+```bash
+tar -O -xvf wazuh-install-files.tar wazuh-install-files/wazuh-passwords.txt
+```
+
+---
+
+## ⚠️ Certificate Warning
+
+The browser may show a certificate warning. You can:
+- Add an exception
+- Import `root-ca.pem` into your browser
+- Use a certificate from a trusted authority
+
+---
+
+## 🛑 Disable Wazuh Updates (recommended)
+
+```bash
+sed -i "s/^deb /#deb /" /etc/apt/sources.list.d/wazuh.list
+apt update
+```
+
